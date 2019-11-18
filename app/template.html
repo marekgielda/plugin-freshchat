@@ -3,6 +3,7 @@
 <head>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
   <script src="https://static.freshdev.io/fdk/2.0/assets/fresh_client.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="app.js"></script>
   <link rel="stylesheet" type="text/css" href="https://static.freshdev.io/fdk/2.0/assets/freshchat.css">
   <link rel="stylesheet" type="text/css" href="style.css">
@@ -11,9 +12,19 @@
 <body>
   <div class="fw-widget-wrapper">
     <div class="app-title">
-      <img src="freshchat_logo.png" class="app-icon">FRESHCHAT</img>
+      <img src="freshchat_logo.png" class="app-icon">VOUCHERIFY</img>
     </div>
-    <p id="apptext">
+
+    <select id="campaign-select">
+      <option selected="selected" data-default>Select a campaign</option>
+    </select>
+
+    <button id="get-voucher-button">Get voucher</button>
+
+    <span>Code:</span>
+    <p id="voucher-code">
+    <i class='material-icons'>file_copy</i>
+
     </p>
   </div>
 </body>

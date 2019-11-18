@@ -9,5 +9,10 @@
         }
       }
     }
-  }
+  },
+  "whitelisted-domains": [
+    "https://api.voucherify.io",
+    "https://8e34ffca.ngrok.io",
+    "https://sample.free.beeceptor.com"
+  ]
 }

@@ -1,1 +1,16 @@
-{}
+{
+  "applicationId": {
+    "display_name": "Application ID",
+    "description": "Application ID can be found in Voucherify project settings",
+    "type": "text",
+    "required": true,
+    "secure": true
+  },
+  "secretKey": {
+    "display_name": "Secret Key",
+    "description": "Secret Key can be found in Voucherify project settings",
+    "type": "text",
+    "required": true,
+    "secure": true
+  }
+}
