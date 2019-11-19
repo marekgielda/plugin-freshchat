@@ -1,4 +1,4 @@
-var baseUrl = 'https://a5fbd2d0.ngrok.io'
+var baseUrl = 'https://e3767510.ngrok.io'
 var headers = {
   'X-App-Id': '<%=iparam.applicationId%>',
   'X-App-Token': '<%=iparam.secretKey%>',
@@ -9,10 +9,19 @@ var headers = {
 var options = { headers: headers }
 var campaignsUrl = `${baseUrl}/v1/campaigns`
 var publicationsUrl = `${baseUrl}/v1/publications`
+var enableMultiplePublishes = false
 
 $(document).ready(function () {
-  app.initialized().then(function (_client) {
+  app.initialized().then(function (_client) {  
     var client = _client
+    client.iparams.get('enableMultiplePublishes').then(
+      function (data) {
+        enableMultiplePublishes = data.enableMultiplePublishes === 'true'
+      },
+      function (error) {
+        console.error(error)
+      }
+    )
     client.events.on('app.activated', function () {
       var campaigns = []
       var selectedCampaignName = null
@@ -21,7 +30,7 @@ $(document).ready(function () {
       $('#get-voucher-button').attr('disabled', true)
       $('#campaign-select').attr('disabled', true)
       $('#code-container').css('display', 'none')
-      $('#copy-icon').html('<i class="fas fa-paste fa-2x"></i>')
+      $('#paste-icon').html('<i class="fas fa-paste fa-lg"></i>')
 
       client.request.get(campaignsUrl, options).then(
         function (data) {
@@ -61,42 +70,50 @@ $(document).ready(function () {
             }
           })
         }
-        
-        client.request
-          .post(publicationsUrl, publicationsOptions)
-          .then(
-            function (data) {
-              voucherCode = JSON.parse(data.response).voucher.code
-              $('#voucher-code').val(voucherCode)
-              $('#get-voucher-button').attr('disabled', true)
-              $('#code-container').css('display', 'block')
-            },
-            function (error) {
-              console.error(error)
-              $('#error-message').text(JSON.parse(error.response).message)
+
+        $('#get-voucher-button').attr('disabled', true)
+        client.request.post(publicationsUrl, publicationsOptions).then(
+          function (data) {
+            voucherCode = JSON.parse(data.response).voucher.code
+            $('#voucher-code').val(voucherCode)
+            $('#code-container').css('display', 'inline-grid')
+            if (!enableMultiplePublishes) {
+              console.log('TURNING OFF')
+              $('#campaign-choice').css({'display': 'none'})
             }
-            )
+          },
+          function (error) {
+            console.error(error)
+            $('#error-message').text(JSON.parse(error.response).message)
+          }
+        )
+      })
+
+      $('#voucher-code').on('click', function () {
+        $('#voucher-code').select()
+        document.execCommand('copy')
+        $('#voucher-code').val('Copied')
+        setTimeout(function () {
+          $('#voucher-code').val(voucherCode)
+        }, 1000)
+      })
+
+      $('#paste-icon').on('click', function () {
+        client.interface
+          .trigger('setValue', {
+            id: 'editor',
+            value: voucherCode
           })
-          
-          $('#voucher-code').on('click', function () {
-            $('#voucher-code').select()
-            document.execCommand('copy')
-            $('#voucher-code').val('Copied')
+          .catch(function (error) {
+            console.log(error) // Method throws undefined error (probably a bug)
+          })
+          .finally(function () {
+            $('#paste-icon').html('<span>Pasted</span>')
             setTimeout(function () {
-              $('#voucher-code').val(voucherCode)
-            }, 1000)
+              $('#paste-icon').html('<i class="fas fa-paste fa-lg"></i>')
+            }, 3000)
           })
-          
-          $('#copy-icon').on('click', function () {
-            client.interface.trigger('setValue', {id: 'editor', value: voucherCode})
-              .then(function(data) {
-                setTimeout(function () {
-                  $('#copy-icon').html('<i class="fas fa-paste fa-2x"></i>')
-                }, 3000)
-              }).catch(function(error) {
-                console.error(error)
-              })
-          })
+      })
     })
   })
 })

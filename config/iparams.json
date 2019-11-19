@@ -12,5 +12,10 @@
     "type": "text",
     "required": true,
     "secure": true
+  },
+  "enableMultiplePublishes": {
+    "display_name": "Enable multiple publishes",
+    "description": "User has possibility to share many vouchers in one session",
+    "type": "checkbox"
   }
 }

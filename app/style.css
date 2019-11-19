@@ -1,7 +1,41 @@
-.logo {
-  background: url('freshchat_logo.png');
-  background-repeat: no-repeat;
-  background-size: contain;
-  height: 25px;
-  margin-top: 25px;
+.campaign-choice,
+.code-container,
+.error-message {
+  margin: 1rem 0;
+}
+
+.campaign-choice {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  grid-gap: 1rem;
+}
+
+.campaign-choice select {
+  width: 15rem;
+}
+
+.code-container {
+  display: inline-grid;
+  grid-template-columns: 2fr 7fr 4rem;
+  grid-gap: 1rem;
+}
+
+.code-title {
+  align-self: center;
+}
+
+.paste-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  max-width: 22rem;
+}
+
+.code-container input {
+  /* width: 15rem; */
 }
