@@ -1,4 +1,4 @@
-var baseUrl = 'https://8e34ffca.ngrok.io'
+var baseUrl = 'https://a5fbd2d0.ngrok.io'
 var headers = {
   'X-App-Id': '<%=iparam.applicationId%>',
   'X-App-Token': '<%=iparam.secretKey%>',
@@ -19,6 +19,9 @@ $(document).ready(function () {
       var voucherCode = null
 
       $('#get-voucher-button').attr('disabled', true)
+      $('#campaign-select').attr('disabled', true)
+      $('#code-container').css('display', 'none')
+      $('#copy-icon').html('<i class="material-icons">file_copy</i>')
 
       client.request.get(campaignsUrl, options).then(
         function (data) {
@@ -29,14 +32,17 @@ $(document).ready(function () {
                 .attr('value', key)
                 .text(value.name)
             )
+            $('#campaign-select').attr('disabled', false)
           })
         },
         function (error) {
           console.log(error)
+          $('#error-message').text(JSON.parse(error.response).message)
         }
       )
 
-      $('#campaign-select').on('change', function () {
+      $('#campaign-select').on('click', function () {
+        selectedCampaignName = campaigns[this.value]
         $('#get-voucher-button').attr(
           'disabled',
           this.value === 'Select a campaign' || !this.value
@@ -45,6 +51,8 @@ $(document).ready(function () {
       })
 
       $('#get-voucher-button').on('click', function () {
+        $('#error-message').text('')
+        $('#code-container').css('display', 'none')
         var publicationsOptions = {
           headers: headers,
           body: JSON.stringify({
@@ -54,18 +62,31 @@ $(document).ready(function () {
             }
           })
         }
+        
         client.request
           .post(publicationsUrl, publicationsOptions)
           .then(
             function (data) {
               voucherCode = JSON.parse(data.response).voucher.code
-              $('#voucher-code').text(voucherCode)
+              $('#voucher-code').val(voucherCode)
+              $('#get-voucher-button').attr('disabled', true)
+              $('#code-container').css('display', 'block')
             },
             function (error) {
               console.log(error)
+              $('#error-message').text(JSON.parse(error.response).message)
             }
-          )
-      })
+            )
+          })
+          
+          $('#copy-icon').on('click', function () {
+            $('#voucher-code').select()
+            document.execCommand('copy')
+            $('#copy-icon').html('<span>Copied</span>')
+            setTimeout(function () {
+              $('#copy-icon').html('<i class="material-icons">file_copy</i>')
+            }, 3000)
+          })
     })
   })
 })
