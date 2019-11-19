@@ -21,7 +21,7 @@ $(document).ready(function () {
       $('#get-voucher-button').attr('disabled', true)
       $('#campaign-select').attr('disabled', true)
       $('#code-container').css('display', 'none')
-      $('#copy-icon').html('<i class="material-icons">file_copy</i>')
+      $('#copy-icon').html('<i class="fas fa-paste fa-2x"></i>')
 
       client.request.get(campaignsUrl, options).then(
         function (data) {
@@ -36,7 +36,7 @@ $(document).ready(function () {
           })
         },
         function (error) {
-          console.log(error)
+          console.error(error)
           $('#error-message').text(JSON.parse(error.response).message)
         }
       )
@@ -47,7 +47,6 @@ $(document).ready(function () {
           'disabled',
           this.value === 'Select a campaign' || !this.value
         )
-        console.log(this.value === 'Select a campaign')
       })
 
       $('#get-voucher-button').on('click', function () {
@@ -73,19 +72,30 @@ $(document).ready(function () {
               $('#code-container').css('display', 'block')
             },
             function (error) {
-              console.log(error)
+              console.error(error)
               $('#error-message').text(JSON.parse(error.response).message)
             }
             )
           })
           
-          $('#copy-icon').on('click', function () {
+          $('#voucher-code').on('click', function () {
             $('#voucher-code').select()
             document.execCommand('copy')
-            $('#copy-icon').html('<span>Copied</span>')
+            $('#voucher-code').val('Copied')
             setTimeout(function () {
-              $('#copy-icon').html('<i class="material-icons">file_copy</i>')
-            }, 3000)
+              $('#voucher-code').val(voucherCode)
+            }, 1000)
+          })
+          
+          $('#copy-icon').on('click', function () {
+            client.interface.trigger('setValue', {id: 'editor', value: voucherCode})
+              .then(function(data) {
+                setTimeout(function () {
+                  $('#copy-icon').html('<i class="fas fa-paste fa-2x"></i>')
+                }, 3000)
+              }).catch(function(error) {
+                console.error(error)
+              })
           })
     })
   })
