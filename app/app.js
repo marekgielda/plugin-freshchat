@@ -10,6 +10,7 @@ var options = { headers: headers }
 var campaignsUrl = `${baseUrl}/v1/campaigns`
 var publicationsUrl = `${baseUrl}/v1/publications`
 var enableMultiplePublishes = false
+var pasteIcon = '<img src="paste-solid.svg" />'
 
 $(document).ready(function () {
   app.initialized().then(function (_client) {  
@@ -30,7 +31,7 @@ $(document).ready(function () {
       $('#get-voucher-button').attr('disabled', true)
       $('#campaign-select').attr('disabled', true)
       $('#code-container').css('display', 'none')
-      $('#paste-icon').html('<img src="paste-solid.svg" />')
+      $('#paste-icon').html(pasteIcon)
 
       client.request.get(campaignsUrl, options).then(
         function (data) {
@@ -110,7 +111,7 @@ $(document).ready(function () {
           .finally(function () {
             $('#paste-icon').html('<span>Pasted</span>')
             setTimeout(function () {
-              $('#paste-icon').html('<img src="paste-solid.svg" />')
+              $('#paste-icon').html(pasteIcon)
             }, 3000)
           })
       })

@@ -12,7 +12,6 @@
   },
   "whitelisted-domains": [
     "https://api.voucherify.io",
-    "https://698ecfdb.ngrok.io",
-    "https://sample.free.beeceptor.com"
+    "https://698ecfdb.ngrok.io"
   ]
 }
