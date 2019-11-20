@@ -1,7 +1,7 @@
 .campaign-choice,
 .code-container,
 .error-message {
-  margin: 1rem 0;
+  margin-top: 2rem;
 }
 
 .campaign-choice {
@@ -14,6 +14,11 @@
   width: 15rem;
   border: none;
   border-bottom: solid 1.5px #34B4AC;
+}
+
+.campaign-choice select:disabled {
+  color: #C2C2C2;
+  border-bottom: solid 1.5px #C2C2C2;
 }
 
 .campaign-choice button {
@@ -41,7 +46,7 @@
 }
 
 .code-container {
-  display: inline-grid;
+  display: none;
   grid-gap: 1rem;
   grid-template-columns: 2fr auto 4rem;
 }
@@ -74,10 +79,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.paste-icon img {
+  height: 2rem;
+}
+
+.paste-icon img * {
   color: #3663A7;
 }
 
-.paste-icon:hover {
+.paste-icon img:hover {
   margin-bottom: 1px;
 }
 

@@ -30,7 +30,7 @@ $(document).ready(function () {
       $('#get-voucher-button').attr('disabled', true)
       $('#campaign-select').attr('disabled', true)
       $('#code-container').css('display', 'none')
-      $('#paste-icon').html('<i class="fas fa-paste fa-lg"></i>')
+      $('#paste-icon').html('<img src="paste-solid.svg" />')
 
       client.request.get(campaignsUrl, options).then(
         function (data) {
@@ -110,7 +110,7 @@ $(document).ready(function () {
           .finally(function () {
             $('#paste-icon').html('<span>Pasted</span>')
             setTimeout(function () {
-              $('#paste-icon').html('<i class="fas fa-paste fa-lg"></i>')
+              $('#paste-icon').html('<img src="paste-solid.svg" />')
             }, 3000)
           })
       })
