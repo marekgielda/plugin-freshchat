@@ -1,4 +1,4 @@
-var baseUrl = 'https://e3767510.ngrok.io'
+var baseUrl = 'https://698ecfdb.ngrok.io'
 var headers = {
   'X-App-Id': '<%=iparam.applicationId%>',
   'X-App-Token': '<%=iparam.secretKey%>',
