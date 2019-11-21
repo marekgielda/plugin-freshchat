@@ -30,19 +30,21 @@ $(document).ready(function () {
           case 'Telephone number':
             sourceIdType = 'phone'
             break
-          default: sourceIdType = 'id'
+          default:
+            sourceIdType = 'id'
         }
 
-        client.data.get('user').then(
-          function (data) {
-            var sourceId
-            if (data.user[sourceIdType] !== null) {
-              sourceId = data.user[sourceIdType]
-            } else {
-              sourceId = data.user.id
-            }
-            
-            client.events.on('app.activated', function () {
+        client.events.on('app.activated', function () {
+          client.data.get('conversation').then(
+            function (data) {
+              var sourceId
+              if (data.conversation.users[0][sourceIdType] !== null) {
+                sourceId = data.conversation.users[0][sourceIdType]
+              } else {
+                sourceId = data.conversation.users[0].id
+              }
+              console.log('SOURCE ID')
+              console.log(sourceId)
               var campaigns = []
               var selectedCampaignName = null
               var voucherCode = null
@@ -130,12 +132,12 @@ $(document).ready(function () {
                     }, 3000)
                   })
               })
-            })
-          },
-          function (error) {
-            console.error(error)
-          }
-        )
+            },
+            function (error) {
+              console.error(error)
+            }
+          )
+        })
       },
       function (error) {
         console.error(error)
