@@ -20,51 +20,126 @@ $(document).ready(function () {
         var selectedCampaignIndex = null
         var sourceId = null
         var voucherCode = null
+        var conversationId = null
+        var isPublicationExpired = false
 
         client.events.on('app.activated', function () {
           console.debug('APP ACTIVATED')
-          client.data.get('conversation').then(
-            function (data) {
-              var user = data.conversation.users[0]
-              console.debug('user', user)
-              if (
-                iparams.useExternalId === true &&
-                user.reference_id !== undefined
-              ) {
-                sourceId = user.reference_id
-              } else {
-                sourceId = user.id
+
+          console.debug(
+            'iparams.enableMultiplePublishes',
+            iparams.enableMultiplePublishes
+          )
+          if (iparams.enableMultiplePublishes) {
+            getUser()
+          } else {
+            getConversation()
+          }
+
+          var numberOfAttempts = 0
+          function getConversation () {
+            client.data.get('conversation').then(
+              function (data) {
+                conversationId = data.conversation.conversation_id
+                client.db.get('expiredConvs').then(
+                  function (conversations) {
+                    isPublicationExpired = conversations.ids
+                      .map(function (id) {
+                        return id === conversationId
+                      })
+                      .some(function (result) {
+                        return result === true
+                      })
+                    console.debug('isPublicationExpired', isPublicationExpired)
+                    if (!isPublicationExpired) {
+                      getUser()
+                    }
+                  },
+                  function (error) {
+                    if (error.message === 'Record not found') {
+                      if (numberOfAttempts === 0) {
+                        client.db
+                          .set('expiredConvs', { ids: [] })
+                          .then(
+                            function (data) {
+                              getConversation()
+                            },
+                            function (error) {
+                              console.log(error)
+                            }
+                          )
+                      } else {
+                        console.error(error)
+                      }
+                    }
+                    console.error(error.message === 'Record not found')
+                  }
+                )
+              },
+              function (error) {
+                console.error(error)
               }
-              console.debug('sourceId: ', sourceId)
-              client.request.get(campaignsUrl, { headers: headers }).then(
-                function (data) {
-                  campaigns = JSON.parse(data.response).campaigns
-                  console.debug('campaigns', campaigns)
-                  $('#campaign-select').append(
-                    $('<option></option>')
-                      .attr('data-default', true)
-                      .val('null')
-                      .text('Select a campaign')
-                  )
-                  $.each(campaigns, function (key, value) {
+            )
+          }
+
+          function getUser () {
+            client.data.get('user').then(
+              function (data) {
+                var user = data.user
+                console.debug('user', user)
+
+                switch (iparams.sourceIdType) {
+                  case 'Phone':
+                    sourceId = user.phone || user.id
+                    break
+                  case 'Email':
+                    sourceId = user.email || user.id
+                    break
+                  case 'External ID':
+                    sourceId = user.reference_id || user.id
+                    break
+                  default: sourceId = user.id
+                }
+
+                console.debug('sourceId: ', sourceId)
+                client.request.get(campaignsUrl, { headers: headers }).then(
+                  function (data) {
+                    campaigns = JSON.parse(data.response).campaigns
+                    console.debug('campaigns', campaigns)
                     $('#campaign-select').append(
                       $('<option></option>')
-                        .attr('value', key)
-                        .text(value.name)
+                        .attr('data-default', true)
+                        .val('null')
+                        .text('Select a campaign')
                     )
-                    $('#campaign-select').attr('disabled', false)
-                  })
-                },
-                function (error) {
-                  console.error(error)
-                  $('#error-message').text(JSON.parse(error.response).message)
-                }
-              )
-            },
-            function (error) {
-              console.error(error)
-            }
-          )
+                    $.each(campaigns, function (key, value) {
+                      $('#campaign-select').append(
+                        $('<option></option>')
+                          .attr('value', key)
+                          .text(value.name)
+                      )
+                    })
+                    if (!isPublicationExpired) {
+                      $('#campaign-select').attr('disabled', false)
+                    }
+                  },
+                  function (error) {
+                    console.error(error)
+                    $('#error-message').text(JSON.parse(error.response).message)
+                  }
+                )
+              },
+              function (error) {
+                console.error(error)
+              }
+            )
+          }
+        })
+
+        $('#campaign-select').on('click', function () {
+          if (selectedCampaignIndex !== null) {
+            $('#get-voucher-button').attr('disabled', false)
+          }
         })
 
         $('#campaign-select').on('change', function () {
@@ -72,6 +147,8 @@ $(document).ready(function () {
           if (this.value !== null) {
             $('#get-voucher-button').attr('disabled', false)
             selectedCampaignIndex = this.value
+          } else {
+            selectedCampaignIndex = null
           }
         })
 
@@ -79,6 +156,19 @@ $(document).ready(function () {
           $('#code-container').css('display', 'none')
           $('#error-message').text('')
           $('#get-voucher-button').attr('disabled', true)
+          $('#campaign-select').attr('disabled', true)
+          client.db
+            .update('expiredConvs', 'append', {
+              ids: [conversationId]
+            })
+            .then(
+              function (data) {
+                console.debug('Db entry creted', data)
+              },
+              function (error) {
+                console.error(error)
+              }
+            )
           var selectedCampaignName = campaigns[selectedCampaignIndex].name
           console.debug('selectedCampaignName', selectedCampaignName)
           client.request
@@ -129,7 +219,6 @@ $(document).ready(function () {
               setTimeout(function () {
                 $('#paste-icon span').css('display', 'none')
                 $('#paste-icon img').css('display', 'inline')
-
               }, 3000)
             })
         })
@@ -147,6 +236,9 @@ $(document).ready(function () {
           selectedCampaignIndex = null
           sourceId = null
           voucherCode = null
+          isPublicationExpired = false
+          conversationId = null
+          isPublicationExpired = false
         })
       },
       function (error) {
