@@ -18,15 +18,9 @@
     "description": "User has possibility to share many vouchers in one session",
     "type": "checkbox"
   },
-  "sourceId": {
-    "display_name": "Source ID",
-    "description": "Select origin of the source ID",
-    "type": "dropdown",
-    "options": [
-      "Freashchat User ID",
-      "Email",
-      "Telephone number"
-    ],
-    "default_value": "Freashchat User ID"
+  "useExternalId": {
+    "display_name": "External ID",
+    "description": "Enable passing external ID as the user reference",
+    "type": "checkbox"
   }
 }

@@ -1,59 +1,51 @@
-var baseUrl = 'https://fbbbb291.ngrok.io'
+var baseUrl = 'https://3d8af96a.ngrok.io'
 var headers = {
   'X-App-Id': '<%=iparam.applicationId%>',
   'X-App-Token': '<%=iparam.secretKey%>',
   'Content-Type': 'application/json',
   Accept: '*/*'
 }
-// var campaignsUrl = 'https://api.voucherify.io/v1/vouchers?limit=15'
-var options = { headers: headers }
 var campaignsUrl = `${baseUrl}/v1/campaigns`
 var publicationsUrl = `${baseUrl}/v1/publications`
-var enableMultiplePublishes = false
-var sourceIdType = null
-var pasteIcon = '<img src="paste-solid.svg" />'
 
 $(document).ready(function () {
   app.initialized().then(function (_client) {
+    console.debug('APP INITIALIZED')
     var client = _client
 
     client.iparams.get().then(
-      function (data) {
-        enableMultiplePublishes = data.enableMultiplePublishes === 'true'
-        switch (data.sourceId) {
-          case 'Freashchat User ID':
-            sourceIdType = 'id'
-            break
-          case 'Email':
-            sourceIdType = 'email'
-            break
-          case 'Telephone number':
-            sourceIdType = 'phone'
-            break
-          default:
-            sourceIdType = 'id'
-        }
+      function (iparams) {
+        console.debug('iparams', iparams)
+        var campaigns = []
+        var selectedCampaignIndex = null
+        var sourceId = null
+        var voucherCode = null
 
         client.events.on('app.activated', function () {
+          console.debug('APP ACTIVATED')
           client.data.get('conversation').then(
             function (data) {
-              var sourceId
-              if (data.conversation.users[0][sourceIdType] !== null) {
-                sourceId = data.conversation.users[0][sourceIdType]
+              var user = data.conversation.users[0]
+              console.debug('user', user)
+              if (
+                iparams.useExternalId === true &&
+                user.reference_id !== undefined
+              ) {
+                sourceId = user.reference_id
               } else {
-                sourceId = data.conversation.users[0].id
+                sourceId = user.id
               }
-              console.log('SOURCE ID')
-              console.log(sourceId)
-              var campaigns = []
-              var selectedCampaignName = null
-              var voucherCode = null
-    
-              $('#paste-icon').html(pasteIcon)
-    
-              client.request.get(campaignsUrl, options).then(
+              console.debug('sourceId: ', sourceId)
+              client.request.get(campaignsUrl, { headers: headers }).then(
                 function (data) {
                   campaigns = JSON.parse(data.response).campaigns
+                  console.debug('campaigns', campaigns)
+                  $('#campaign-select').append(
+                    $('<option></option>')
+                      .attr('data-default', true)
+                      .val('null')
+                      .text('Select a campaign')
+                  )
                   $.each(campaigns, function (key, value) {
                     $('#campaign-select').append(
                       $('<option></option>')
@@ -68,75 +60,93 @@ $(document).ready(function () {
                   $('#error-message').text(JSON.parse(error.response).message)
                 }
               )
-    
-              $('#campaign-select').on('click', function () {
-                selectedCampaignName = campaigns[this.value]
-                $('#get-voucher-button').attr(
-                  'disabled',
-                  this.value === 'Select a campaign' || !this.value
-                )
-              })
-    
-              $('#get-voucher-button').on('click', function () {
-                $('#error-message').text('')
-                $('#code-container').css('display', 'none')
-                var publicationsOptions = {
-                  headers: headers,
-                  body: JSON.stringify({
-                    campaign: selectedCampaignName,
-                    customer: {
-                      source_id: sourceId
-                    }
-                  })
-                }
-    
-                $('#get-voucher-button').attr('disabled', true)
-                client.request.post(publicationsUrl, publicationsOptions).then(
-                  function (data) {
-                    voucherCode = JSON.parse(data.response).voucher.code
-                    $('#voucher-code').val(voucherCode)
-                    $('#code-container').css('display', 'inline-grid')
-                    if (!enableMultiplePublishes) {
-                      $('#campaign-choice').css({ display: 'none' })
-                    }
-                  },
-                  function (error) {
-                    console.error(error)
-                    $('#error-message').text(JSON.parse(error.response).message)
-                  }
-                )
-              })
-    
-              $('#voucher-code').on('click', function () {
-                $('#voucher-code').select()
-                document.execCommand('copy')
-                $('#voucher-code').val('Copied')
-                setTimeout(function () {
-                  $('#voucher-code').val(voucherCode)
-                }, 1000)
-              })
-    
-              $('#paste-icon').on('click', function () {
-                client.interface
-                  .trigger('setValue', {
-                    id: 'editor',
-                    value: voucherCode
-                  })
-                  .catch(function (error) {
-                    console.error(error) // Method throws undefined error (probably a bug)
-                  })
-                  .finally(function () {
-                    $('#paste-icon').html('<span>Pasted</span>')
-                    setTimeout(function () {
-                      $('#paste-icon').html(pasteIcon)
-                    }, 3000)
-                  })
-              })
             },
             function (error) {
               console.error(error)
             }
           )
+        })
+
+        $('#campaign-select').on('change', function () {
+          console.debug('Change', this.value)
+          if (this.value !== null) {
+            $('#get-voucher-button').attr('disabled', false)
+            selectedCampaignIndex = this.value
+          }
+        })
+
+        $('#get-voucher-button').on('click', function () {
+          $('#code-container').css('display', 'none')
+          $('#error-message').text('')
+          $('#get-voucher-button').attr('disabled', true)
+          var selectedCampaignName = campaigns[selectedCampaignIndex].name
+          console.debug('selectedCampaignName', selectedCampaignName)
+          client.request
+            .post(publicationsUrl, {
+              headers: headers,
+              body: JSON.stringify({
+                campaign: selectedCampaignName,
+                customer: {
+                  source_id: sourceId
+                }
+              })
+            })
+            .then(
+              function (data) {
+                voucherCode = JSON.parse(data.response).voucher.code
+                console.debug('voucherCode: ', voucherCode)
+                $('#voucher-code').val(voucherCode)
+                $('#code-container').css('display', 'inline-grid')
+              },
+              function (error) {
+                console.error(error)
+                $('#error-message').text(JSON.parse(error.response).message)
+              }
+            )
+        })
+
+        $('#voucher-code').on('click', function () {
+          $('#voucher-code').select()
+          document.execCommand('copy')
+          $('#voucher-code').val('Copied')
+          setTimeout(function () {
+            $('#voucher-code').val(voucherCode)
+          }, 1000)
+        })
+
+        $('#paste-icon').on('click', function () {
+          client.interface
+            .trigger('setValue', {
+              id: 'editor',
+              value: voucherCode
+            })
+            .catch(function (error) {
+              console.error(error) // Method throws undefined error (probably a bug)
+            })
+            .finally(function () {
+              $('#paste-icon img').css('display', 'none')
+              $('#paste-icon span').css('display', 'inline')
+              setTimeout(function () {
+                $('#paste-icon span').css('display', 'none')
+                $('#paste-icon img').css('display', 'inline')
+
+              }, 3000)
+            })
+        })
+
+        client.events.on('app.activated', function () {
+          console.debug('APP DEACTIVATED')
+          $('#campaign-select').empty()
+          $('#campaign-select').attr('disabled', true)
+          $('#get-voucher-button').attr('disabled', true)
+          $('#code-container').css('display', 'none')
+          $('#voucher-code').val(null)
+          $('#error-message').text('')
+
+          campaigns = []
+          selectedCampaignIndex = null
+          sourceId = null
+          voucherCode = null
         })
       },
       function (error) {
