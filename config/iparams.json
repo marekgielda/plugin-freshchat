@@ -21,6 +21,7 @@
   "sourceIdType": {
     "display_name": "Source ID",
     "description": "Select an origin of the Voucherify source id",
+    "required": true,
     "type": "multiselect",
     "default_value": "Freshchat ID",
     "options": [

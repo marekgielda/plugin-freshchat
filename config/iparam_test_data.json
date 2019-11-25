@@ -2,5 +2,5 @@
   "applicationId": "a17d85f8-c081-4037-b2c5-f700e5eaf44a",
   "secretKey": "d80e1efc-31bd-4df3-8cf2-26d550cf171c",
   "enableMultiplePublishes": true,
-  "sourceIdType": "Email"
+  "sourceIdType": "Phone"
 }
