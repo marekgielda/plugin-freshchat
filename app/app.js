@@ -23,23 +23,23 @@ $(document).ready(function () {
         var voucherCode = null
         var conversationId = null
         var isPublicationExpired = false
-        var numberOfAppActivatonAttempts = 0
+        var numOfAppActivatonAttempts = 0
 
         client.events.on('app.activated', onAppActivated)
 
         function onAppActivated () {
-          console.debug('APP ACTIVATED')
           if (isAppActivated) {
-            if (numberOfAppActivatonAttempts > 10) {
+            if (numOfAppActivatonAttempts > 10) {
               return 0
             } else {
-              console.debug('ATTEMPT ', numberOfAppActivatonAttempts)
+              console.debug('ACTIVATION ATTEMPT NR ', numOfAppActivatonAttempts)
               setTimeout(function () {
-                numberOfAppActivatonAttempts++
+                numOfAppActivatonAttempts++
                 onAppActivated()
               }, 1000)
             }
           } else {
+            console.debug('APP ACTIVATED')
             isAppActivated = true
 
             console.debug(
@@ -52,7 +52,7 @@ $(document).ready(function () {
               getConversation()
             }
 
-            var numberOfAttempts = 0
+            var numOfConvFetchAttempts = 0
             function getConversation () {
               client.data.get('conversation').then(
                 function (data) {
@@ -76,7 +76,7 @@ $(document).ready(function () {
                     },
                     function (error) {
                       if (error.message === 'Record not found') {
-                        if (numberOfAttempts === 0) {
+                        if (numOfConvFetchAttempts === 0) {
                           client.db.set('expiredConvs', { ids: [] }).then(
                             function (data) {
                               getConversation()
@@ -177,19 +177,21 @@ $(document).ready(function () {
           $('#code-container').css('display', 'none')
           $('#error-message').text('')
           $('#get-voucher-button').attr('disabled', true)
-          $('#campaign-select').attr('disabled', true)
-          client.db
-            .update('expiredConvs', 'append', {
-              ids: [conversationId]
-            })
-            .then(
-              function (data) {
-                console.debug('Db entry creted', data)
-              },
-              function (error) {
-                console.error(error)
-              }
-            )
+          if (!iparams.enableMultiplePublishes) {
+            $('#campaign-select').attr('disabled', true)
+            client.db
+              .update('expiredConvs', 'append', {
+                ids: [conversationId]
+              })
+              .then(
+                function (data) {
+                  console.debug('Db entry creted', data)
+                },
+                function (error) {
+                  console.error(error)
+                }
+              )
+          }
           var selectedCampaignName = campaigns[selectedCampaignIndex].name
           console.debug('selectedCampaignName', selectedCampaignName)
           client.request
@@ -252,14 +254,6 @@ $(document).ready(function () {
           $('#code-container').css('display', 'none')
           $('#voucher-code').val(null)
           $('#error-message').text('')
-
-          // campaigns = []
-          // selectedCampaignIndex = null
-          // sourceId = null
-          // voucherCode = null
-          // isPublicationExpired = false
-          // conversationId = null
-          // isPublicationExpired = false
 
           isAppActivated = false
         })
