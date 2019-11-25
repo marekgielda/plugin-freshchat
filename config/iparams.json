@@ -18,15 +18,16 @@
     "description": "User has possibility to share many vouchers in one session",
     "type": "checkbox"
   },
-  "sourceId": {
+  "sourceIdType": {
     "display_name": "Source ID",
-    "description": "Select origin of the source ID",
-    "type": "dropdown",
+    "description": "Select an origin of the Voucherify source id",
+    "type": "multiselect",
+    "default_value": "Freshchat ID",
     "options": [
-      "Freashchat User ID",
-      "Email",
-      "Telephone number"
-    ],
-    "default_value": "Freashchat User ID"
+      "Freshchat ID",
+      "External ID",
+      "Phone",
+      "Email"
+    ]
   }
 }

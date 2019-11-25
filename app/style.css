@@ -103,3 +103,7 @@ header {
   align-items: center;
   max-width: 22rem;
 }
+
+.paste-icon span {
+  display: none;
+}

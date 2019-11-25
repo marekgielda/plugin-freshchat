@@ -10,24 +10,27 @@
 </head>
 
 <body>
-    <header>Voucherify</header>
+  <header>Voucherify</header>
 
-    <div id="campaign-choice" class="campaign-choice">
-      <select id="campaign-select" disabled>
-        <option selected="selected" data-default>Select a campaign</option>
-      </select>
-      <button id="get-voucher-button" disabled>
-        Get voucher
-      </button>
-    </div>
+  <div id="campaign-choice" class="campaign-choice">
+    <select id="campaign-select" disabled>
+      <!-- <option selected="selected" data-default>Select a campaign</option> -->
+    </select>
+    <button id="get-voucher-button" disabled>
+      Get voucher
+    </button>
+  </div>
 
-    <div id="code-container" class="code-container">
-      <span class="code-title">Code:</span>
-      <input id="voucher-code" type="text" readonly />
-      <span id="paste-icon" class="paste-icon"></span>
-    </div>
+  <div id="code-container" class="code-container">
+    <span class="code-title">Code:</span>
+    <input id="voucher-code" type="text" readonly />
+    <span id="paste-icon" class="paste-icon">
+      <img src="paste-solid.svg" />
+      <span>Pasted</span>
+    </span>
+  </div>
 
-    <span id="error-message" class="error-message"></span>
+  <span id="error-message" class="error-message"></span>
 </body>
 
 </html>
