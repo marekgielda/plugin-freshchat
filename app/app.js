@@ -1,4 +1,4 @@
-var baseUrl = 'https://3d8af96a.ngrok.io'
+var baseUrl = 'https://06dd9d0c.ngrok.io'
 var headers = {
   'X-App-Id': '<%=iparam.applicationId%>',
   'X-App-Token': '<%=iparam.secretKey%>',
@@ -7,6 +7,7 @@ var headers = {
 }
 var campaignsUrl = `${baseUrl}/v1/campaigns`
 var publicationsUrl = `${baseUrl}/v1/publications`
+var isAppActivated = false
 
 $(document).ready(function () {
   app.initialized().then(function (_client) {
@@ -22,45 +23,61 @@ $(document).ready(function () {
         var voucherCode = null
         var conversationId = null
         var isPublicationExpired = false
+        var numberOfAppActivatonAttempts = 0
 
-        client.events.on('app.activated', function () {
+        client.events.on('app.activated', onAppActivated)
+
+        function onAppActivated () {
           console.debug('APP ACTIVATED')
-
-          console.debug(
-            'iparams.enableMultiplePublishes',
-            iparams.enableMultiplePublishes
-          )
-          if (iparams.enableMultiplePublishes) {
-            getUser()
+          if (isAppActivated) {
+            if (numberOfAppActivatonAttempts > 10) {
+              return 0
+            } else {
+              console.debug('ATTEMPT ', numberOfAppActivatonAttempts)
+              setTimeout(function () {
+                numberOfAppActivatonAttempts++
+                onAppActivated()
+              }, 1000)
+            }
           } else {
-            getConversation()
-          }
+            isAppActivated = true
 
-          var numberOfAttempts = 0
-          function getConversation () {
-            client.data.get('conversation').then(
-              function (data) {
-                conversationId = data.conversation.conversation_id
-                client.db.get('expiredConvs').then(
-                  function (conversations) {
-                    isPublicationExpired = conversations.ids
-                      .map(function (id) {
-                        return id === conversationId
-                      })
-                      .some(function (result) {
-                        return result === true
-                      })
-                    console.debug('isPublicationExpired', isPublicationExpired)
-                    if (!isPublicationExpired) {
-                      getUser()
-                    }
-                  },
-                  function (error) {
-                    if (error.message === 'Record not found') {
-                      if (numberOfAttempts === 0) {
-                        client.db
-                          .set('expiredConvs', { ids: [] })
-                          .then(
+            console.debug(
+              'iparams.enableMultiplePublishes',
+              iparams.enableMultiplePublishes
+            )
+            if (iparams.enableMultiplePublishes) {
+              getUser()
+            } else {
+              getConversation()
+            }
+
+            var numberOfAttempts = 0
+            function getConversation () {
+              client.data.get('conversation').then(
+                function (data) {
+                  conversationId = data.conversation.conversation_id
+                  client.db.get('expiredConvs').then(
+                    function (conversations) {
+                      isPublicationExpired = conversations.ids
+                        .map(function (id) {
+                          return id === conversationId
+                        })
+                        .some(function (result) {
+                          return result === true
+                        })
+                      console.debug(
+                        'isPublicationExpired',
+                        isPublicationExpired
+                      )
+                      if (!isPublicationExpired) {
+                        getUser()
+                      }
+                    },
+                    function (error) {
+                      if (error.message === 'Record not found') {
+                        if (numberOfAttempts === 0) {
+                          client.db.set('expiredConvs', { ids: [] }).then(
                             function (data) {
                               getConversation()
                             },
@@ -68,73 +85,77 @@ $(document).ready(function () {
                               console.log(error)
                             }
                           )
-                      } else {
-                        console.error(error)
+                        } else {
+                          console.error(error)
+                        }
                       }
+                      console.error(error.message === 'Record not found')
                     }
-                    console.error(error.message === 'Record not found')
-                  }
-                )
-              },
-              function (error) {
-                console.error(error)
-              }
-            )
-          }
-
-          function getUser () {
-            client.data.get('user').then(
-              function (data) {
-                var user = data.user
-                console.debug('user', user)
-
-                switch (iparams.sourceIdType) {
-                  case 'Phone':
-                    sourceId = user.phone || user.id
-                    break
-                  case 'Email':
-                    sourceId = user.email || user.id
-                    break
-                  case 'External ID':
-                    sourceId = user.reference_id || user.id
-                    break
-                  default: sourceId = user.id
+                  )
+                },
+                function (error) {
+                  console.error(error)
                 }
+              )
+            }
 
-                console.debug('sourceId: ', sourceId)
-                client.request.get(campaignsUrl, { headers: headers }).then(
-                  function (data) {
-                    campaigns = JSON.parse(data.response).campaigns
-                    console.debug('campaigns', campaigns)
-                    $('#campaign-select').append(
-                      $('<option></option>')
-                        .attr('data-default', true)
-                        .val('null')
-                        .text('Select a campaign')
-                    )
-                    $.each(campaigns, function (key, value) {
+            function getUser () {
+              client.data.get('user').then(
+                function (data) {
+                  var user = data.user
+                  console.debug('user', user)
+
+                  switch (iparams.sourceIdType) {
+                    case 'Phone':
+                      sourceId = user.phone || user.id
+                      break
+                    case 'Email':
+                      sourceId = user.email || user.id
+                      break
+                    case 'External ID':
+                      sourceId = user.reference_id || user.id
+                      break
+                    default:
+                      sourceId = user.id
+                  }
+
+                  console.debug('sourceId: ', sourceId)
+                  client.request.get(campaignsUrl, { headers: headers }).then(
+                    function (data) {
+                      campaigns = JSON.parse(data.response).campaigns
+                      console.debug('campaigns', campaigns)
                       $('#campaign-select').append(
                         $('<option></option>')
-                          .attr('value', key)
-                          .text(value.name)
+                          .attr('data-default', true)
+                          .val('null')
+                          .text('Select a campaign')
                       )
-                    })
-                    if (!isPublicationExpired) {
-                      $('#campaign-select').attr('disabled', false)
+                      $.each(campaigns, function (key, value) {
+                        $('#campaign-select').append(
+                          $('<option></option>')
+                            .attr('value', key)
+                            .text(value.name)
+                        )
+                      })
+                      if (!isPublicationExpired) {
+                        $('#campaign-select').attr('disabled', false)
+                      }
+                    },
+                    function (error) {
+                      console.error(error)
+                      $('#error-message').text(
+                        JSON.parse(error.response).message
+                      )
                     }
-                  },
-                  function (error) {
-                    console.error(error)
-                    $('#error-message').text(JSON.parse(error.response).message)
-                  }
-                )
-              },
-              function (error) {
-                console.error(error)
-              }
-            )
+                  )
+                },
+                function (error) {
+                  console.error(error)
+                }
+              )
+            }
           }
-        })
+        }
 
         $('#campaign-select').on('click', function () {
           if (selectedCampaignIndex !== null) {
@@ -232,13 +253,15 @@ $(document).ready(function () {
           $('#voucher-code').val(null)
           $('#error-message').text('')
 
-          campaigns = []
-          selectedCampaignIndex = null
-          sourceId = null
-          voucherCode = null
-          isPublicationExpired = false
-          conversationId = null
-          isPublicationExpired = false
+          // campaigns = []
+          // selectedCampaignIndex = null
+          // sourceId = null
+          // voucherCode = null
+          // isPublicationExpired = false
+          // conversationId = null
+          // isPublicationExpired = false
+
+          isAppActivated = false
         })
       },
       function (error) {
