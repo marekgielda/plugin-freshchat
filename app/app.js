@@ -219,12 +219,14 @@ $(document).ready(function () {
         })
 
         $('#voucher-code').on('click', function () {
-          $('#voucher-code').select()
-          document.execCommand('copy')
-          $('#voucher-code').val('Copied')
-          setTimeout(function () {
-            $('#voucher-code').val(voucherCode)
-          }, 1000)
+          if ($('#voucher-code').val() !== 'Copied') {
+            $('#voucher-code').select()
+            document.execCommand('copy')
+            $('#voucher-code').val('Copied')
+            setTimeout(function () {
+              $('#voucher-code').val(voucherCode)
+            }, 1000)
+          }
         })
 
         $('#paste-icon').on('click', function () {
