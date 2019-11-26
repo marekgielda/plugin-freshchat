@@ -1,14 +1,3 @@
-var baseUrl = 'https://06dd9d0c.ngrok.io'
-var headers = {
-  'X-App-Id': '<%=iparam.applicationId%>',
-  'X-App-Token': '<%=iparam.secretKey%>',
-  'Content-Type': 'application/json',
-  Accept: '*/*'
-}
-var campaignsUrl = `${baseUrl}/v1/campaigns`
-var publicationsUrl = `${baseUrl}/v1/publications`
-var isAppActivated = false
-
 $(document).ready(function () {
   app.initialized().then(function (_client) {
     var client = _client
@@ -55,7 +44,7 @@ $(document).ready(function () {
                             getConversation()
                           },
                           function (error) {
-                            console.log(error)
+                            console.error(error)
                           }
                         )
                       } else {
@@ -91,9 +80,10 @@ $(document).ready(function () {
                     sourceId = user.id
                 }
 
-                client.request.get(campaignsUrl, { headers: headers }).then(
-                  function (data) {
-                    campaigns = JSON.parse(data.response).campaigns
+                client.request
+                  .invoke('getCampaigns', {})
+                  .then(function (result) {
+                    campaigns = result.response.campaigns
                     $('#campaign-select').append(
                       $('<option></option>')
                         .attr('data-default', true)
@@ -110,12 +100,11 @@ $(document).ready(function () {
                     if (!isPublicationExpired) {
                       $('#campaign-select').attr('disabled', false)
                     }
-                  },
-                  function (error) {
+                  })
+                  .catch(function (error) {
                     console.error(error)
-                    $('#error-message').text(JSON.parse(error.response).message)
-                  }
-                )
+                    $('#error-message').text(error.message)
+                  })
               },
               function (error) {
                 console.error(error)
@@ -157,28 +146,24 @@ $(document).ready(function () {
               )
           }
 
-          var selectedCampaignName = campaigns[selectedCampaignIndex].name
           client.request
-            .post(publicationsUrl, {
-              headers: headers,
-              body: JSON.stringify({
-                campaign: selectedCampaignName,
-                customer: {
-                  source_id: sourceId
+            .invoke('publicateVoucher', {
+              data: {
+                'campaign': campaigns[selectedCampaignIndex].name,
+                'customer': {
+                  'source_id': sourceId
                 }
-              })
-            })
-            .then(
-              function (data) {
-                voucherCode = JSON.parse(data.response).voucher.code
-                $('#voucher-code').val(voucherCode)
-                $('#code-container').css('display', 'inline-grid')
-              },
-              function (error) {
-                console.error(error)
-                $('#error-message').text(JSON.parse(error.response).message)
               }
-            )
+            })
+            .then(function (result) {
+              voucherCode = result.response
+              $('#voucher-code').val(voucherCode)
+              $('#code-container').css('display', 'inline-grid')
+            })
+            .catch(function (error) {
+              console.error(error)
+              $('#error-message').text(error.message)
+            })
         })
 
         $('#voucher-code').on('click', function () {
