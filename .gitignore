@@ -1,3 +1,4 @@
 coverage
 .fdk
 .report.json
+node_modules
