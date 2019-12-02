@@ -15,18 +15,18 @@ exports = {
       })
       .catch(function (error) {
         console.error(error)
+        renderData(error)
       })
   },
-  publicateVoucher: function (payload) {
+  publishVoucher: function (payload) {
     var voucherify = voucherifyClient({
       applicationId: payload.iparams.applicationId,
       clientSecretKey: payload.iparams.secretKey
     })
 
     voucherify.distributions
-      .publish(JSON.parse(JSON.stringify(payload.data)))
+      .publish(payload.data)
       .then(function (result) {
-        console.log(result.voucher.code)
         renderData(null, result.voucher.code)
       })
       .catch(function (error) {
