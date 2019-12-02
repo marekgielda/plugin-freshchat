@@ -80,31 +80,7 @@ $(document).ready(function () {
                     sourceId = user.id
                 }
 
-                client.request
-                  .invoke('getCampaigns', {})
-                  .then(function (result) {
-                    campaigns = result.response.campaigns
-                    $('#campaign-select').append(
-                      $('<option></option>')
-                        .attr('data-default', true)
-                        .val('null')
-                        .text('Select a campaign')
-                    )
-                    $.each(campaigns, function (key, value) {
-                      $('#campaign-select').append(
-                        $('<option></option>')
-                          .attr('value', key)
-                          .text(value.name)
-                      )
-                    })
-                    if (!isPublicationExpired) {
-                      $('#campaign-select').attr('disabled', false)
-                    }
-                  })
-                  .catch(function (error) {
-                    console.error(error)
-                    $('#error-message').text(error.message)
-                  })
+                getCampaigns()
               },
               function (error) {
                 console.error(error)
@@ -112,6 +88,34 @@ $(document).ready(function () {
             )
           }
         })
+
+        function getCampaigns () {
+          client.request
+            .invoke('getCampaigns', {})
+            .then(function (result) {
+              campaigns = result.response.campaigns
+              $('#campaign-select').append(
+                $('<option></option>')
+                  .attr('data-default', true)
+                  .val('null')
+                  .text('Select a campaign')
+              )
+              $.each(campaigns, function (key, value) {
+                $('#campaign-select').append(
+                  $('<option></option>')
+                    .attr('value', key)
+                    .text(value.name)
+                )
+              })
+              if (!isPublicationExpired) {
+                $('#campaign-select').attr('disabled', false)
+              }
+            })
+            .catch(function (error) {
+              console.error(error)
+              $('#error-message').text(error.message)
+            })
+        }
 
         $('#campaign-select').on('click', function () {
           if (selectedCampaignIndex !== null) {
@@ -132,30 +136,28 @@ $(document).ready(function () {
           $('#code-container').css('display', 'none')
           $('#error-message').text('')
           $('#get-voucher-button').attr('disabled', true)
-          if (!iparams.enableMultiplePublishes) {
-            $('#campaign-select').attr('disabled', true)
-            client.db
-              .update('expiredConvs', 'append', {
-                ids: [conversationId]
-              })
-              .then(
-                function () {},
-                function (error) {
-                  console.error(error)
-                }
-              )
-          }
+
 
           client.request
-            .invoke('publicateVoucher', {
+            .invoke('publishVoucher', {
               data: {
-                'campaign': campaigns[selectedCampaignIndex].name,
-                'customer': {
-                  'source_id': sourceId
+                campaign: campaigns[selectedCampaignIndex].name,
+                customer: {
+                  source_id: sourceId
                 }
               }
             })
             .then(function (result) {
+              if (!iparams.enableMultiplePublishes) {
+                $('#campaign-select').attr('disabled', true)
+                client.db
+                  .update('expiredConvs', 'append', {
+                    ids: [conversationId]
+                  })
+                  .then(null, function (error) {
+                    console.error(error)
+                  })
+              }
               voucherCode = result.response
               $('#voucher-code').val(voucherCode)
               $('#code-container').css('display', 'inline-grid')
